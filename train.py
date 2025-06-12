@@ -13,12 +13,12 @@ model = DQN(
     verbose=1,
     learning_rate=1e-4,
     buffer_size=10000,
-    learning_starts=1000,
+    learning_starts=5000,
     batch_size=64,
     gamma=0.99,
-    exploration_fraction=0.2,
-    exploration_final_eps=0.02,
-    train_freq=4,
+    exploration_fraction=0.3,
+    exploration_final_eps=0.01,
+    train_freq=16,
     target_update_interval=100
 )
 

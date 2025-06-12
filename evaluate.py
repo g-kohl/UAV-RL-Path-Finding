@@ -5,11 +5,12 @@ import time
 environment = Environment(render_mode="human")
 model = DQN.load("models/dqn_uav", env=environment)
 
-observation, _ = environment.reset()
-terminated = False
+for _ in range(10):
+    observation, _ = environment.reset()
+    terminated = False
 
-while not terminated:
-    action, _ = model.predict(observation)
-    observation, reward, terminated, truncated, info = environment.step(action)
-    environment.render()
-    time.sleep(1.0)
+    while not terminated:
+        action, _ = model.predict(observation)
+        observation, reward, terminated, truncated, info = environment.step(action)
+        environment.render()
+        time.sleep(1.0)
