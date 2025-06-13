@@ -9,7 +9,7 @@ class Environment(gym.Env):
         "render_fps": 10
     }
 
-    def __init__(self, grid_size=(10, 10), render_mode=None):
+    def __init__(self, grid_size=(10, 10), render_mode=None, seed=None):
         super(Environment, self).__init__()
 
         self.grid_size = grid_size # (height, width) or (rows, columns)
@@ -18,7 +18,7 @@ class Environment(gym.Env):
         self.action_space = spaces.Discrete(8)
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(2 + self.vision * self.vision,), dtype=np.float32)
 
-        self.reset()
+        self.reset(seed)
 
         self.render_mode = render_mode
         self.cell_size = 50
@@ -95,7 +95,7 @@ class Environment(gym.Env):
     def step(self, action):
         self.current_steps += 1
 
-        if self.current_steps > 200: # diminuir
+        if self.current_steps > 100:
             reward = -100
             truncated = True
         else:

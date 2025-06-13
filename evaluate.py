@@ -2,8 +2,9 @@ from stable_baselines3 import DQN
 from environment import Environment
 import time
 
-environment = Environment(render_mode="human")
-model = DQN.load("models/dqn_uav", env=environment)
+environment = Environment(grid_size=(10, 10), render_mode="human")
+# model = DQN.load("models/dqn_uav", env=environment)
+model = DQN.load("models/best_model", env=environment)
 
 for _ in range(10):
     observation, _ = environment.reset()
@@ -11,6 +12,6 @@ for _ in range(10):
 
     while not terminated:
         action, _ = model.predict(observation)
-        observation, reward, terminated, truncated, info = environment.step(action)
+        observation, _, terminated, _, _ = environment.step(action)
         environment.render()
         time.sleep(1.0)

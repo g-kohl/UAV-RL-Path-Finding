@@ -1,32 +1,54 @@
 from stable_baselines3 import DQN
-from stable_baselines3.common.callbacks import CheckpointCallback
+from stable_baselines3.common.callbacks import EvalCallback
 from stable_baselines3.common.env_checker import check_env
 from environment import Environment
+import os
+
+os.makedirs("models", exist_ok=True)
+os.makedirs("logs", exist_ok=True)
 
 environment = Environment()
-
 check_env(environment, warn=True)
 
-model = DQN(
-    policy="MlpPolicy",
-    env=environment,
-    verbose=1,
-    learning_rate=1e-4,
-    buffer_size=10000,
-    learning_starts=5000,
-    batch_size=64,
-    gamma=0.99,
-    exploration_fraction=0.3,
-    exploration_final_eps=0.01,
-    train_freq=16,
-    target_update_interval=100
+evaluate_environment = Environment(seed=42)
+
+evaluate_callback = EvalCallback(
+    evaluate_environment,
+    best_model_save_path="./models/",
+    log_path="./logs/",
+    eval_freq=100000,
+    n_eval_episodes=20,
+    deterministic=True,
+    render=False
 )
 
-checkpoint_callback = CheckpointCallback(
-    save_freq=100000,
-    save_path="models/",
-    name_prefix="dqn_uav"
-)
+if os.path.exists("models/dqn_uav.zip"):
+    print("Model found. Continuing training...")
+    model = DQN.load("models/dqn_uav", env=environment)
+    reset_timesteps = False
+else:
+    print("No model found. New training starting...")
+    model = DQN(
+        policy="MlpPolicy",
+        env=environment,
+        verbose=1,
+        learning_rate=3e-5,
+        buffer_size=200000,
+        learning_starts=5000,
+        batch_size=128,
+        gamma=0.99,
+        exploration_fraction=0.2,
+        exploration_final_eps=0.01,
+        train_freq=16,
+        target_update_interval=5000,
+        gradient_steps=1
+    )
 
-model.learn(total_timesteps=1000000, callback=checkpoint_callback)
+    reset_timesteps = True
+
+model.learn(total_timesteps=5000000,
+            callback=evaluate_callback,
+            reset_num_timesteps=reset_timesteps,
+            tb_log_name="DQN_training")
+
 model.save("models/dqn_uav")
