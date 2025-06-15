@@ -194,7 +194,7 @@ cython_debug/
 .cursorindexingignore
 
 # Models
-models/
+# models/
 
 # Logs
-logs/
+# logs/

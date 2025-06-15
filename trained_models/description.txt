@@ -1,0 +1,4 @@
+"no_obstacle":
+Random positions for uav and target
+No obstacles in the grid (except for the walls)
+Trained in a 10x10 grid

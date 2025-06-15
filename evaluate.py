@@ -3,7 +3,6 @@ from environment import Environment
 import time
 
 environment = Environment(grid_size=(10, 10), render_mode="human")
-# model = DQN.load("models/dqn_uav", env=environment)
 model = DQN.load("models/best_model", env=environment)
 
 for _ in range(10):
