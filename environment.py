@@ -2,6 +2,7 @@ import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 import pygame
+import random
 
 class Environment(gym.Env):
     metadata = {
@@ -9,7 +10,7 @@ class Environment(gym.Env):
         "render_fps": 10
     }
 
-    def __init__(self, grid_size=(10, 10), render_mode=None, seed=None):
+    def __init__(self, grid_size=(10, 10), static_obstacles=False, mobile_obstacles=False, seed=None, render_mode=None):
         super(Environment, self).__init__()
 
         self.grid_size = grid_size # (height, width) or (rows, columns)
@@ -18,6 +19,8 @@ class Environment(gym.Env):
         self.action_space = spaces.Discrete(8)
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(2 + self.vision * self.vision,), dtype=np.float32)
 
+        self.static_obstacles = static_obstacles
+        self.mobile_obstacles = mobile_obstacles
         self.reset(seed)
 
         self.render_mode = render_mode
@@ -47,9 +50,8 @@ class Environment(gym.Env):
             "last"  : np.array([self.margin + self.grid_size[0] - 1, self.margin + self.grid_size[1] - 1])
         }
 
-        self.reset_position_and_target()
-
         self.place_obstacles()
+        self.reset_position_and_target()
 
         return self.get_observation(), {}
     
@@ -65,12 +67,34 @@ class Environment(gym.Env):
 
         return grid
     
+    def place_obstacles(self):
+        if self.static_obstacles:
+            middle_row = (self.grid_size[0] // 2) + self.margin
+            wall = (4 + self.margin, self.grid_size[1] - 4 + self.margin)
+
+            self.grid[middle_row, wall[0]:wall[1]] = 1
+
+        if self.mobile_obstacles:
+            self.mobile_obstacles_number = 2
+            self.mobile_obstacles_positions = []
+
+            for _ in range(self.mobile_obstacles_number):
+                while True:
+                    position = self.get_random_coordinates()
+
+                    if not self.detect_obstacle(position):
+                        break
+
+                self.mobile_obstacles_positions.append(position)
+                self.grid[self.margin + position[0]][self.margin + position[1]] = 1
+
+    
     def reset_position_and_target(self):
         while True:
             self.position = self.get_random_coordinates()
             self.target = self.get_random_coordinates()
 
-            if not np.array_equal(self.position, self.target):
+            if not np.array_equal(self.position, self.target) and not self.detect_obstacle(self.position) and not self.detect_obstacle(self.target):
                 break
 
     def get_random_coordinates(self):
@@ -78,9 +102,12 @@ class Environment(gym.Env):
             self.np_random.integers(self.grid_coordinates["first"][0], self.grid_coordinates["last"][0]),
             self.np_random.integers(self.grid_coordinates["first"][1], self.grid_coordinates["last"][1])
         ])
-
-    def place_obstacles(self):
-        pass #future implementation
+    
+    def detect_obstacle(self, position):
+        if self.grid[position[0] + self.margin][position[1] + self.margin] == 1:
+            return True
+        
+        return False
     
     def get_observation(self):
         self.relative_position = (self.target - self.position) / np.array(self.grid_size)
@@ -101,13 +128,13 @@ class Environment(gym.Env):
         else:
             truncated = False
 
-        moves = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
-        move = np.array(moves[action])
+        self.moves = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+        move = np.array(self.moves[action])
         next_position = self.position + move
 
         self.update_obstacles()
 
-        if self.grid[next_position[0]][next_position[1]] == 1:
+        if self.detect_obstacle(next_position):
             reward = -100
             terminated = True
         elif np.array_equal(next_position, self.target):
@@ -122,7 +149,19 @@ class Environment(gym.Env):
         return self.get_observation(), reward, terminated, truncated, {}
     
     def update_obstacles(self):
-        pass #future implementation
+        if not self.mobile_obstacles:
+            return
+
+        for obstacle in range(self.mobile_obstacles_number):
+            while True:
+                action = random.randrange(0, 8)
+                move = np.array(self.moves[action])
+
+                if not self.detect_obstacle(self.mobile_obstacles_positions[obstacle] + move):
+                    self.grid[self.margin + self.mobile_obstacles_positions[obstacle][0]][self.margin + self.mobile_obstacles_positions[obstacle][1]] = 0
+                    self.mobile_obstacles_positions[obstacle] += move
+                    self.grid[self.margin + self.mobile_obstacles_positions[obstacle][0]][self.margin + self.mobile_obstacles_positions[obstacle][1]] = 1
+                    break
     
     def render(self):
         if self.render_mode != 'human':
@@ -130,6 +169,7 @@ class Environment(gym.Env):
         
         self.screen.fill((200, 200, 200))
 
+        # draw uav vision
         for i in range(self.vision):
             for j in range(self.vision):
                 coordinates = (self.position[0] - self.margin + i, self.position[1] - self.margin + j)
@@ -144,6 +184,7 @@ class Environment(gym.Env):
 
                     pygame.draw.rect(self.screen, (255, 255, 255), view_rect)
 
+        # draw grid
         for i in range(self.grid_size[0]):
             for j in range(self.grid_size[1]):
                 grid_rect = pygame.Rect(
@@ -155,6 +196,20 @@ class Environment(gym.Env):
                 
                 pygame.draw.rect(self.screen, (150, 150, 150), grid_rect, 1)
 
+        # draw obstacles
+        for i in range(self.grid_size[0]):
+            for j in range(self.grid_size[1]):
+                if self.detect_obstacle((i, j)):
+                    obstacle_rect = pygame.Rect(
+                        j * self.cell_size,
+                        i * self.cell_size,
+                        self.cell_size,
+                        self.cell_size
+                    )
+
+                    pygame.draw.rect(self.screen, (0, 0, 0), obstacle_rect)
+
+        # draw target
         target_rect = pygame.Rect(
             (self.target[1] - self.margin) * self.cell_size,
             (self.target[0] - self.margin) * self.cell_size,
@@ -164,6 +219,7 @@ class Environment(gym.Env):
 
         pygame.draw.rect(self.screen, (255, 0, 0), target_rect)
 
+        # draw uav
         drone_rect = pygame.Rect(
             (self.position[1] - self.margin) * self.cell_size,
             (self.position[0] - self.margin) * self.cell_size,
@@ -173,7 +229,18 @@ class Environment(gym.Env):
 
         pygame.draw.rect(self.screen, (0, 255, 0), drone_rect)
 
-        text = self.font.render(f"Relative position: {np.round(self.relative_position, 2)}", True, (0, 0, 0))
+        # draw text background
+        text_background_rect = pygame.Rect(
+            0,
+            self.grid_size[0] * self.cell_size,
+            self.grid_size[1] * self.cell_size,
+            self.cell_size
+        )
+
+        pygame.draw.rect(self.screen, (20, 20, 20), text_background_rect)
+
+        # draw text
+        text = self.font.render(f"Relative position: {np.round(self.relative_position, 2)}", True, (255, 255, 255))
         self.screen.blit(text, (15, self.grid_size[0] * self.cell_size + 15))
 
         pygame.display.flip()
