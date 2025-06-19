@@ -1,7 +1,7 @@
-from stable_baselines3 import DQN
-from environment import Environment
-import time
 import argparse
+from environment import Environment
+from stable_baselines3 import DQN
+import time
 
 parser = argparse.ArgumentParser()
 
@@ -28,10 +28,10 @@ for episode in range(episodes):
     episode_reward = 0
 
     while not (terminated or truncated):
+        environment.render()
         action, _ = model.predict(observation)
         observation, reward, terminated, truncated, _ = environment.step(action)
         episode_reward += reward
-        environment.render()
         time.sleep(1.0)
 
     print(f"Episode {episode} reward: {episode_reward}")

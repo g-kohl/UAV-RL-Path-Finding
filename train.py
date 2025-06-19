@@ -1,9 +1,9 @@
+import argparse
+from environment import Environment
+import os
 from stable_baselines3 import DQN
 from stable_baselines3.common.callbacks import EvalCallback
 from stable_baselines3.common.env_checker import check_env
-from environment import Environment
-import os
-import argparse
 
 os.makedirs("models", exist_ok=True)
 os.makedirs("logs", exist_ok=True)
