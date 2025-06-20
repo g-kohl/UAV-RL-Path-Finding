@@ -12,8 +12,8 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument('--timesteps', type=int, required=True)
 parser.add_argument('--grid_size', nargs='+', required=True)
-parser.add_argument('--static_obstacles', action='store_true', required=True)
-parser.add_argument('--mobile_obstacles', action='store_true', required=True)
+parser.add_argument('--static_obstacles', action='store_true', default=False)
+parser.add_argument('--mobile_obstacles', action='store_true', default=False)
 
 arguments = parser.parse_args()
 
