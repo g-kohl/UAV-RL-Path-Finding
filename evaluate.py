@@ -6,7 +6,7 @@ import time
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--episodes', type=int, default=10)
-parser.add_argument('--grid_size', nargs='+', default=[10, 10])
+parser.add_argument('--grid_size', nargs='+', default=[15, 15])
 parser.add_argument('--static_obstacles', action='store_true', default=False)
 parser.add_argument('--mobile_obstacles', action='store_true', default=False)
 
@@ -32,9 +32,9 @@ for episode in range(episodes):
         action, _ = model.predict(observation)
         observation, reward, terminated, truncated, _ = environment.step(action)
         episode_reward += reward
-        time.sleep(1.0)
+        time.sleep(0.75)
 
     print(f"Episode {episode} reward: {episode_reward}")
     total_reward += episode_reward
 
-print(f"Mean reward: {(total_reward / episodes):.2f}")
+print(f"Mean reward: {(total_reward / episodes):.3f}")

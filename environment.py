@@ -167,6 +167,8 @@ class Environment(gym.Env):
             terminated = False
             self.position = next_position
 
+        reward = np.clip(reward / 100, -1.0, 1.0)
+
         return self.get_observation(), reward, terminated, truncated, {}
     
 
