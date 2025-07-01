@@ -37,9 +37,17 @@ evaluate_callback = EvalCallback(
     render=False
 )
 
-if os.path.exists("models/dqn_uav.zip"):
+if os.path.exists("models/pretrained_model.zip"):
+    print("Pre-trained model found. Adaptation training starting...")
+    model = DQN.load("models/pretrained_model", env=environment,
+                     custom_objects={
+                         "learning_rate": 1e-5,
+                         "exploration_final_eps": 0.05
+                     })
+    reset_timesteps = False
+elif os.path.exists("models/last_model.zip"):
     print("Model found. Continuing training...")
-    model = DQN.load("models/dqn_uav", env=environment)
+    model = DQN.load("models/last_model", env=environment)
     reset_timesteps = False
 else:
     print("No model found. New training starting...")
@@ -66,4 +74,4 @@ model.learn(total_timesteps=timesteps,
             reset_num_timesteps=reset_timesteps,
             tb_log_name="DQN_training")
 
-model.save("models/dqn_uav")
+model.save("models/last_model")

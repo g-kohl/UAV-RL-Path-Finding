@@ -36,7 +36,22 @@ python train.py --timesteps NUMBER_OF_TIMESTEPS --grid_size ROWS COLUMNS
 - Replace *NUMBER_OF_TIMESTEPS* with the desired number of timesteps.
 - Replace *ROWS* and *COLUMNS* with the grid dimensions.
 
-You can also include two flags, `--static_obstacles` and `--mobile_obstacles`, to add obstacles to the training.
+You can also include two flags, `--static_obstacles` and/or `--mobile_obstacles`, to add obstacles to the training.
+
+### Retraining
+
+In order to retrain your model, you have the following options:
+- **Continue training the same model:**
+If the number of timesteps was insufficient and you don't want to change your training strategy or start from scratch, make sure the model file still exists in the [`models`](./models/) folder with the name `last_model`.
+Then, simply run the training command again (this won't change the hyperparameters).
+
+- **Transfer learning:**
+If you trained your model in one specific scenario and want to adapt it to a new environment (while keeping what it has already learned), rename the file to `pretrained_model`.
+When using a pre-trained model, the script will retrain it with a smaller learning rate and a higher exploration rate to encourage adaptation.
+
+- **Start from scratch:**
+If you want to train a completely new model, ensure there is no file named `last_model` in the folder.
+In this case, the script will automatically create a fresh model and start training from the beginning.
 
 ## Evaluation
 
@@ -47,7 +62,7 @@ python evaluate.py
 ```
 
 As well as in training, you can specify some parameters by the command line:
-`--episodes number_of_episodes` and the three other parameters that were available for the training script (grid size, static obstacles and mobile obstacles).
+`--episodes NUMBER_OF_EPISODES` and the three other parameters that were available for the training script (grid size, static obstacles and mobile obstacles).
 
 ## Visualizing Training Logs
 
