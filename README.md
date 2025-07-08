@@ -62,7 +62,10 @@ python evaluate.py
 ```
 
 As well as in training, you can specify some parameters by the command line:
-`--episodes NUMBER_OF_EPISODES` and the three other parameters that were available for the training script (grid size, static obstacles and mobile obstacles).
+`--episodes NUMBER_OF_EPISODES`, `--model MODEL_FILE_NAME` and the three other parameters that were available for the training script (grid size, static obstacles and mobile obstacles).
+
+If you specify a number of episodes higher then 10, the program assumes you just want to test the model and won't render any window.
+Otherwise, the program assumes you want to see the behavior of the agent and will render a window.
 
 ## Visualizing Training Logs
 

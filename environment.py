@@ -4,6 +4,8 @@ import numpy as np
 import pygame
 import random
 
+MAPS = 5
+
 class Environment(gym.Env):
     metadata = {
         "render_modes": ["human", "ansi"],
@@ -80,7 +82,7 @@ class Environment(gym.Env):
             print("NO STATIC OBSTACLES: grid and obstacles map have different sizes")
             return
 
-        map_number = random.randint(1, 3)
+        map_number = random.randint(1, MAPS)
 
         with open(f"maps/map_{map_number}.txt") as map:
             for i, line in enumerate(map):
