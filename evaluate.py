@@ -3,7 +3,7 @@ from environment import Environment
 from stable_baselines3 import DQN, PPO
 import time
 
-INTERVAL = 0.75
+INTERVAL = 0.1
 
 parser = argparse.ArgumentParser()
 
@@ -11,7 +11,7 @@ parser.add_argument('--episodes', type=int, default=10)
 parser.add_argument('--grid_size', nargs='+', default=[15, 15])
 parser.add_argument('--static_obstacles', action='store_true', default=False)
 parser.add_argument('--mobile_obstacles', action='store_true', default=False)
-parser.add_argument('--model', type=str, default="models/best_model")
+parser.add_argument('--model', type=str, default="models/last_model")
 parser.add_argument('--algorithm', type=str, default="DQN")
 
 arguments = parser.parse_args()

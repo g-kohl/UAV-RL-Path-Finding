@@ -4,6 +4,8 @@ import numpy as np
 import pygame
 import random
 
+MAX_WINDOW_SIZE = 600
+PANEL_HEIGHT = 50
 MAPS = 5
 
 class Environment(gym.Env):
@@ -27,10 +29,9 @@ class Environment(gym.Env):
         self.reset(seed)
 
         self.render_mode = render_mode
-        self.cell_size = 50
-        panel_height = 50
+        self.cell_size = MAX_WINDOW_SIZE/max(grid_size[0], grid_size[1])
         window_width = self.grid_size[1] * self.cell_size
-        window_height = self.grid_size[0] * self.cell_size + panel_height
+        window_height = self.grid_size[0] * self.cell_size + PANEL_HEIGHT
 
         if self.render_mode == "human":
             pygame.init()
@@ -261,7 +262,7 @@ class Environment(gym.Env):
             0,
             self.grid_size[0] * self.cell_size,
             self.grid_size[1] * self.cell_size,
-            self.cell_size
+            PANEL_HEIGHT
         )
 
         pygame.draw.rect(self.screen, (20, 20, 20), text_background_rect)
