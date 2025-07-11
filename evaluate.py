@@ -1,6 +1,6 @@
 import argparse
 from environment import Environment
-from stable_baselines3 import DQN
+from stable_baselines3 import DQN, PPO
 import time
 
 INTERVAL = 0.75
@@ -12,6 +12,7 @@ parser.add_argument('--grid_size', nargs='+', default=[15, 15])
 parser.add_argument('--static_obstacles', action='store_true', default=False)
 parser.add_argument('--mobile_obstacles', action='store_true', default=False)
 parser.add_argument('--model', type=str, default="models/best_model")
+parser.add_argument('--algorithm', type=str, default="DQN")
 
 arguments = parser.parse_args()
 
@@ -30,9 +31,14 @@ grid_size = (int(arguments.grid_size[0]), int(arguments.grid_size[1]))
 static_obstacles = arguments.static_obstacles
 mobile_obstacles = arguments.mobile_obstacles
 model_name = arguments.model
+algorithm = arguments.algorithm
 
 environment = Environment(grid_size=grid_size, static_obstacles=static_obstacles, mobile_obstacles=mobile_obstacles, render_mode=render_mode)
-model = DQN.load(model_name, env=environment)
+
+if algorithm == "DQN":
+    model = DQN.load(model_name, env=environment)
+elif algorithm == "PPO":
+    model = PPO.load(model_name, env=environment)
 
 total_reward = 0
 successes = 0

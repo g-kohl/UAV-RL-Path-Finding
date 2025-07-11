@@ -39,18 +39,25 @@ evaluate_callback = EvalCallback(
 
 if os.path.exists("models/pretrained_model.zip"):
     print("Pre-trained model found. Adaptation training starting...")
+
     model = DQN.load("models/pretrained_model", env=environment,
                      custom_objects={
                          "learning_rate": 1e-5,
                          "exploration_final_eps": 0.05
                      })
+    
+    model.exploration_fraction = 0.2
     reset_timesteps = False
+
 elif os.path.exists("models/last_model.zip"):
     print("Model found. Continuing training...")
+
     model = DQN.load("models/last_model", env=environment)
     reset_timesteps = False
+
 else:
     print("No model found. New training starting...")
+
     model = DQN(
         policy="MlpPolicy",
         env=environment,
