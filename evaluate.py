@@ -3,7 +3,7 @@ from environment import Environment
 from stable_baselines3 import DQN, PPO
 import time
 
-INTERVAL = 0.1
+INTERVAL = 0.5
 
 parser = argparse.ArgumentParser()
 

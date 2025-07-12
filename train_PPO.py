@@ -2,6 +2,8 @@ import argparse
 from environment import Environment
 import os
 from stable_baselines3 import PPO
+from stable_baselines3.common.callbacks import CallbackList
+from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.callbacks import EvalCallback
 from stable_baselines3.common.env_checker import check_env
 
@@ -37,6 +39,14 @@ evaluate_callback = EvalCallback(
     render=False
 )
 
+checkpoint_callback = CheckpointCallback(
+    save_freq=1_000_000,
+    save_path="./models/checkpoints/",
+    name_prefix="model"
+)
+
+callbacks = CallbackList([evaluate_callback, checkpoint_callback])
+
 if os.path.exists("models/pretrained_model.zip"):
     print("Pre-trained model found. Adaptation training starting...")
 
@@ -68,7 +78,7 @@ else:
     reset_timesteps = True
 
 model.learn(total_timesteps=timesteps,
-            callback=evaluate_callback,
+            callback=callbacks,
             reset_num_timesteps=reset_timesteps,
             tb_log_name="PPO_training")
 
