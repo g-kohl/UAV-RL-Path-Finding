@@ -33,7 +33,7 @@ mobile_obstacles = arguments.mobile_obstacles
 model_name = arguments.model
 algorithm = arguments.algorithm
 
-environment = Environment(grid_size=grid_size, static_obstacles=static_obstacles, mobile_obstacles=mobile_obstacles, render_mode=render_mode)
+environment = Environment(grid_size=grid_size, static_obstacles=static_obstacles, mobile_obstacles=mobile_obstacles, training=False, render_mode=render_mode)
 
 if algorithm == "DQN":
     model = DQN.load(model_name, env=environment)

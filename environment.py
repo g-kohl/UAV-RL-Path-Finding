@@ -14,7 +14,7 @@ class Environment(gym.Env):
         "render_fps": 10
     }
 
-    def __init__(self, grid_size=(10, 10), static_obstacles=False, mobile_obstacles=False, seed=None, render_mode=None):
+    def __init__(self, grid_size=(10, 10), static_obstacles=False, mobile_obstacles=False, training=True, seed=None, render_mode=None):
         super(Environment, self).__init__()
 
         self.grid_size = grid_size # (height, width) or (rows, columns)
@@ -25,6 +25,7 @@ class Environment(gym.Env):
 
         self.static_obstacles = static_obstacles
         self.mobile_obstacles = mobile_obstacles
+        self.training = training
 
         self.reset(seed)
 
@@ -85,7 +86,12 @@ class Environment(gym.Env):
 
         map_number = random.randint(1, MAPS)
 
-        with open(f"maps/map_{map_number}.txt") as map:
+        if self.training:
+            path = f"maps/training/map_"
+        else:
+            path = f"maps/testing/map_"
+
+        with open(f"{path}{map_number}.txt") as map:
             for i, line in enumerate(map):
                 line = "".join([char for char in line if char != "\n" and char != " "])
 

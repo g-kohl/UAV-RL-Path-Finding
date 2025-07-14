@@ -96,8 +96,8 @@ A custom stable-baselines3 environment needs to override some methods:
 All other methods in the [`environment.py`](./environment.py) script are auxiliary.
 
 ## Obstacles and Maps
-- Static obstacles: Three predefined [`maps`](./maps/) are available (all are 15x15 grids).
-Make sure your grid size matches these dimensions.
+- Static obstacles: 10 predefined [`maps`](./maps/) are available (five for training and five for testing).
+All are 15x15 grids, so make sure your grid size matches these dimensions.
 - Mobile obstacles: These are represented by singular cells moving randomly, simulating other UAV's.
 
 ## Training Algorithm
