@@ -24,10 +24,17 @@ grid_size = (int(arguments.grid_size[0]), int(arguments.grid_size[1]))
 static_obstacles = arguments.static_obstacles
 mobile_obstacles = arguments.mobile_obstacles
 
-environment = Environment(grid_size=grid_size, static_obstacles=static_obstacles, mobile_obstacles=mobile_obstacles)
+environment = Environment(grid_size=grid_size,
+                          static_obstacles=static_obstacles,
+                          mobile_obstacles=mobile_obstacles)
+
 check_env(environment, warn=True)
 
-evaluate_environment = Environment(seed=42)
+evaluate_environment = Environment(grid_size=grid_size,
+                                   static_obstacles=static_obstacles,
+                                   mobile_obstacles=mobile_obstacles,
+                                   training=False,
+                                   seed=42)
 
 evaluate_callback = EvalCallback(
     evaluate_environment,

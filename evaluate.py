@@ -12,7 +12,7 @@ parser.add_argument('--grid_size', nargs='+', default=[15, 15])
 parser.add_argument('--static_obstacles', action='store_true', default=False)
 parser.add_argument('--mobile_obstacles', action='store_true', default=False)
 parser.add_argument('--model', type=str, default="models/last_model")
-parser.add_argument('--algorithm', type=str, default="DQN")
+parser.add_argument('--algorithm', type=str, default="PPO")
 
 arguments = parser.parse_args()
 
@@ -33,7 +33,12 @@ mobile_obstacles = arguments.mobile_obstacles
 model_name = arguments.model
 algorithm = arguments.algorithm
 
-environment = Environment(grid_size=grid_size, static_obstacles=static_obstacles, mobile_obstacles=mobile_obstacles, training=False, render_mode=render_mode)
+environment = Environment(grid_size=grid_size,
+                          static_obstacles=static_obstacles,
+                          mobile_obstacles=mobile_obstacles,
+                          training=False,
+                          seed=42,
+                          render_mode=render_mode)
 
 if algorithm == "DQN":
     model = DQN.load(model_name, env=environment)

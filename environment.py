@@ -2,8 +2,9 @@ import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 import pygame
-import random
 
+UAV_VISION = 5
+INITIAL_STEPS = 10_000_000 # based on the previous training of the current model
 MAX_WINDOW_SIZE = 600
 PANEL_HEIGHT = 50
 MAPS = 5
@@ -18,21 +19,22 @@ class Environment(gym.Env):
         super(Environment, self).__init__()
 
         self.grid_size = grid_size # (height, width) or (rows, columns)
-        self.vision = 5
 
         self.action_space = spaces.Discrete(8)
-        self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(2 + self.vision * self.vision,), dtype=np.float32)
+        self.moves = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+        self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(2 + UAV_VISION * UAV_VISION,), dtype=np.float32)
 
         self.static_obstacles = static_obstacles
         self.mobile_obstacles = mobile_obstacles
         self.training = training
 
+        self.total_steps = INITIAL_STEPS
         self.reset(seed)
 
         self.render_mode = render_mode
-        self.cell_size = MAX_WINDOW_SIZE/max(grid_size[0], grid_size[1])
-        window_width = self.grid_size[1] * self.cell_size
+        self.cell_size = MAX_WINDOW_SIZE / max(grid_size[0], grid_size[1])
         window_height = self.grid_size[0] * self.cell_size + PANEL_HEIGHT
+        window_width = self.grid_size[1] * self.cell_size
 
         if self.render_mode == "human":
             pygame.init()
@@ -47,13 +49,15 @@ class Environment(gym.Env):
 
         self.current_steps = 0
 
-        self.margin = self.vision // 2
+        self.margin = UAV_VISION // 2
         self.grid = self.reset_grid()
 
         self.grid_coordinates = {
             "first" : np.array([self.margin, self.margin]),
             "last"  : np.array([self.margin + self.grid_size[0] - 1, self.margin + self.grid_size[1] - 1])
         }
+
+        self.danger_coordinates = []
 
         if self.static_obstacles:
             self.place_static_obstacles()
@@ -67,9 +71,9 @@ class Environment(gym.Env):
     
 
     def reset_grid(self):
-        grid = np.zeros((self.grid_size[0] + self.vision - 1, self.grid_size[1] + self.vision - 1))
+        grid = np.zeros((self.grid_size[0] + UAV_VISION - 1, self.grid_size[1] + UAV_VISION - 1))
 
-        for i in range(self.margin):
+        for i in range(self.margin): # place walls on the borders of the map
             grid[i, :] = 1
             grid[grid.shape[0]-1-i, :] = 1
 
@@ -84,23 +88,45 @@ class Environment(gym.Env):
             print("NO STATIC OBSTACLES: grid and obstacles map have different sizes")
             return
 
-        map_number = random.randint(1, MAPS)
+        difficulty = self.select_difficulty()
+        map_id = self.np_random.integers(1, MAPS + 1)
+
 
         if self.training:
-            path = f"maps/training/map_"
+            path = f"maps/training/{difficulty}/map_"
         else:
             path = f"maps/testing/map_"
 
-        with open(f"{path}{map_number}.txt") as map:
+        with open(f"{path}{map_id}.txt") as map: # load obstacles based on the map file
+            self.free_space = 0
+
             for i, line in enumerate(map):
                 line = "".join([char for char in line if char != "\n" and char != " "])
 
                 for j, char in enumerate(line):
-                    self.grid[i + self.grid_coordinates["first"][0]][j + self.grid_coordinates["first"][1]] = int(char)
+                    grid_coodinates = (i + self.grid_coordinates["first"][0], j + self.grid_coordinates["first"][1])
+
+                    if char == '2': # danger coordinates
+                        self.danger_coordinates.append((grid_coodinates[0], grid_coodinates[1]))
+
+                    char = 1 if char == '1' else 0 # other numbers in the map are converted to zero
+                    self.grid[grid_coodinates[0]][grid_coodinates[1]] = char
+                    
+                    if char != 1:
+                        self.free_space += 1
+
+
+    def select_difficulty(self):
+        if self.total_steps < 1_000_000:
+            return "easy"
+        if self.total_steps < 3_000_000:
+            return "medium"
+        
+        return "hard"
 
 
     def place_mobile_obstacles(self):
-        self.mobile_obstacles_number = (self.grid_size[0] * self.grid_size[1]) // 50
+        self.mobile_obstacles_number = self.free_space // 50 # good fraction of mobile obstacles
         self.mobile_obstacles_positions = []
 
         for _ in range(self.mobile_obstacles_number):
@@ -119,6 +145,12 @@ class Environment(gym.Env):
             self.np_random.integers(self.grid_coordinates["first"][0], self.grid_coordinates["last"][0] + 1),
             self.np_random.integers(self.grid_coordinates["first"][1], self.grid_coordinates["last"][1] + 1)
         ])
+    
+    
+    def get_random_danger_coordinates(self):
+        coordinates = self.danger_coordinates[self.np_random.integers(0, len(self.danger_coordinates))]
+
+        return np.array(coordinates)
 
 
     def detect_obstacle(self, position):
@@ -131,7 +163,11 @@ class Environment(gym.Env):
     def reset_position_and_target(self):
         while True:
             self.position = self.get_random_coordinates()
-            self.target = self.get_random_coordinates()
+
+            if self.np_random.random() < 0.7 and len(self.danger_coordinates) > 0:
+                self.target = self.get_random_danger_coordinates()
+            else:
+                self.target = self.get_random_coordinates()
 
             if not np.array_equal(self.position, self.target) and not self.detect_obstacle(self.position) and not self.detect_obstacle(self.target):
                 break
@@ -150,31 +186,33 @@ class Environment(gym.Env):
     
 
     def step(self, action):
+        self.total_steps += 1
         self.current_steps += 1
 
-        if self.current_steps > self.grid_size[0] * self.grid_size[1]:
+        if self.current_steps > self.grid_size[0] * self.grid_size[1]: # UAV took many steps (more steps than coordinates in the grid)
             reward = -100
+            terminated = False
             truncated = True
         else:
             truncated = False
 
-        self.moves = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
         move = np.array(self.moves[action])
         next_position = self.position + move
 
         self.update_obstacles()
 
-        if self.detect_obstacle(next_position):
-            reward = -100
-            terminated = True
-        elif np.array_equal(next_position, self.target):
-            reward = 100
-            terminated = True
-            self.position = next_position
-        else:
-            reward = -0.1
-            terminated = False
-            self.position = next_position
+        if not truncated:
+            if self.detect_obstacle(next_position):
+                reward = -100
+                terminated = True
+            elif np.array_equal(next_position, self.target):
+                reward = 100
+                terminated = True
+                self.position = next_position
+            else:
+                reward = -0.1
+                terminated = False
+                self.position = next_position
 
         reward = np.clip(reward / 100, -1.0, 1.0)
 
@@ -186,8 +224,10 @@ class Environment(gym.Env):
             return
 
         for i, obstacle_position in enumerate(self.mobile_obstacles_positions):
-            while True:
-                action = random.randrange(0, 8)
+            directions = list(range(8))
+            self.np_random.shuffle(directions)
+
+            for action in directions:
                 move = np.array(self.moves[action])
 
                 if not self.detect_obstacle(obstacle_position + move):
@@ -204,8 +244,8 @@ class Environment(gym.Env):
         self.screen.fill((200, 200, 200))
 
         # draw uav vision
-        for i in range(self.vision):
-            for j in range(self.vision):
+        for i in range(UAV_VISION):
+            for j in range(UAV_VISION):
                 coordinates = (self.position[0] - self.margin + i, self.position[1] - self.margin + j)
 
                 if not self.out_of_bounds(coordinates):
@@ -254,14 +294,14 @@ class Environment(gym.Env):
                     pygame.draw.rect(self.screen, (0, 0, 0), obstacle_rect)
 
         # draw uav
-        drone_rect = pygame.Rect(
+        UAV_rect = pygame.Rect(
             (self.position[1] - self.margin) * self.cell_size,
             (self.position[0] - self.margin) * self.cell_size,
             self.cell_size,
             self.cell_size
         )
 
-        pygame.draw.rect(self.screen, (0, 255, 0), drone_rect)
+        pygame.draw.rect(self.screen, (0, 255, 0), UAV_rect)
 
         # draw text background
         text_background_rect = pygame.Rect(

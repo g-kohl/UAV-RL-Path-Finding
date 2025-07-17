@@ -2,6 +2,8 @@ import argparse
 from environment import Environment
 import os
 from stable_baselines3 import DQN
+from stable_baselines3.common.callbacks import CallbackList
+from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.callbacks import EvalCallback
 from stable_baselines3.common.env_checker import check_env
 
@@ -22,10 +24,17 @@ grid_size = (int(arguments.grid_size[0]), int(arguments.grid_size[1]))
 static_obstacles = arguments.static_obstacles
 mobile_obstacles = arguments.mobile_obstacles
 
-environment = Environment(grid_size=grid_size, static_obstacles=static_obstacles, mobile_obstacles=mobile_obstacles)
+environment = Environment(grid_size=grid_size,
+                          static_obstacles=static_obstacles,
+                          mobile_obstacles=mobile_obstacles)
+
 check_env(environment, warn=True)
 
-evaluate_environment = Environment(seed=42)
+evaluate_environment = Environment(grid_size=grid_size,
+                                   static_obstacles=static_obstacles,
+                                   mobile_obstacles=mobile_obstacles,
+                                   training=False,
+                                   seed=42)
 
 evaluate_callback = EvalCallback(
     evaluate_environment,
@@ -36,6 +45,14 @@ evaluate_callback = EvalCallback(
     deterministic=True,
     render=False
 )
+
+checkpoint_callback = CheckpointCallback(
+    save_freq=1_000_000,
+    save_path="./models/checkpoints/",
+    name_prefix="model"
+)
+
+callbacks = CallbackList([evaluate_callback, checkpoint_callback])
 
 if os.path.exists("models/pretrained_model.zip"):
     print("Pre-trained model found. Adaptation training starting...")
@@ -77,7 +94,7 @@ else:
     reset_timesteps = True
 
 model.learn(total_timesteps=timesteps,
-            callback=evaluate_callback,
+            callback=callbacks,
             reset_num_timesteps=reset_timesteps,
             tb_log_name="DQN_training")
 
