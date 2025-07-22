@@ -4,10 +4,10 @@ import numpy as np
 import pygame
 
 UAV_VISION = 5
-INITIAL_STEPS = 10_000_000 # based on the previous training of the current model
+INITIAL_STEPS = 0 # based on the previous training of the current model
 MAX_WINDOW_SIZE = 600
 PANEL_HEIGHT = 50
-MAPS = 5
+MAPS = 8
 
 class Environment(gym.Env):
     metadata = {
@@ -91,7 +91,6 @@ class Environment(gym.Env):
         difficulty = self.select_difficulty()
         map_id = self.np_random.integers(1, MAPS + 1)
 
-
         if self.training:
             path = f"maps/training/{difficulty}/map_"
         else:
@@ -164,7 +163,7 @@ class Environment(gym.Env):
         while True:
             self.position = self.get_random_coordinates()
 
-            if self.np_random.random() < 0.7 and len(self.danger_coordinates) > 0:
+            if self.np_random.random() < 0.75 and len(self.danger_coordinates) > 0: # 75% of the episodes, the target will be close to a wall
                 self.target = self.get_random_danger_coordinates()
             else:
                 self.target = self.get_random_coordinates()

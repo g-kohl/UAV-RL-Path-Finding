@@ -59,6 +59,7 @@ if os.path.exists("models/pretrained_model.zip"):
 
     model = PPO.load("models/pretrained_model", env=environment)
     model.learning_rate = 1e-5
+    model.n_steps = 2048
     reset_timesteps = False
 
 elif os.path.exists("models/last_model.zip"):
@@ -74,9 +75,9 @@ else:
         policy="MlpPolicy",
         env=environment,
         verbose=1,
-        learning_rate=3e-5,
+        learning_rate=5e-5,
         gamma=0.995,
-        n_steps=2048,
+        n_steps=1024,
         batch_size=256,
         n_epochs=10,
         clip_range=0.2,
