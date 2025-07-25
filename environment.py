@@ -116,9 +116,9 @@ class Environment(gym.Env):
 
 
     def select_difficulty(self):
-        if self.total_steps < 1_000_000:
-            return "easy"
         if self.total_steps < 3_000_000:
+            return "easy"
+        if self.total_steps < 5_000_000:
             return "medium"
         
         return "hard"

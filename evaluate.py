@@ -79,7 +79,9 @@ for episode in range(episodes):
 
     total_reward += episode_reward
 
-print(f"Successes: {successes}")
-print(f"Collisions: {collisions}")
-print(f"Truncations: {truncations}")
-print(f"Mean reward: {(total_reward / episodes):.3f}")
+print("|====================")
+print(f"| Successes: {successes}")
+print(f"| Collisions: {collisions}")
+print(f"| Truncations: {truncations}")
+print(f"| Mean reward: {(total_reward / episodes):.3f}")
+print("|====================")
